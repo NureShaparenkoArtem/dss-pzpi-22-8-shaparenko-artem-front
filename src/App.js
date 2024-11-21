@@ -7,8 +7,8 @@ import { Button } from "@mui/material";
 const App = () => {
   const [data, setData] = useState([]);
   const [resource, setResource] = useState("good");
-  const [tabularData, setTabularData] = useState([]); // Новое состояние для табличных данных
-  const [isTabularView, setIsTabularView] = useState(false); // Флаг для переключения вида
+  const [tabularData, setTabularData] = useState([]);
+  const [isTabularView, setIsTabularView] = useState(false);
 
   const fetchData = useCallback(() => {
     fetch(`http://localhost:8080/api/v1/${resource}`)
@@ -55,11 +55,9 @@ const App = () => {
     )
       .then((response) => response.json())
       .then((data) => {
-        alert(`Количество работников по адресу "${addressInput}": ${data}`);
+        alert(`Number of employees at the address "${addressInput}": ${data}`);
       })
-      .catch((error) =>
-        console.error("Ошибка при подсчете работников:", error)
-      );
+      .catch((error) => console.error("Error in counting workers:", error));
   };
 
   const handleCountWorkersTabular = (addressInput) => {
@@ -68,16 +66,16 @@ const App = () => {
     )
       .then((response) => response.json())
       .then((data) => {
-        setTabularData(data.map((name, index) => ({ id: index + 1, name }))); // Преобразуем данные для DataGrid
-        setIsTabularView(true); // Переключаемся на вид табличных данных
+        setTabularData(data.map((name, index) => ({ id: index + 1, name })));
+        setIsTabularView(true);
       })
       .catch((error) =>
-        console.error("Ошибка при получении списка работников:", error)
+        console.error("Error getting list of employees:", error)
       );
   };
 
   const handleBackToResourceView = () => {
-    setIsTabularView(false); // Возврат к стандартному виду данных
+    setIsTabularView(false);
   };
 
   const handleUpdatePrice = (goodId, newPrice) => {
@@ -92,16 +90,16 @@ const App = () => {
     )
       .then(async (response) => {
         if (response.ok) {
-          alert("Цена успешно обновлена.");
+          alert("Price updated successfully.");
         } else {
-          const errorData = await response.json(); // Получаем данные об ошибке
-          alert(`Ошибка: ${errorData.error || "Неизвестная ошибка"}`);
+          const errorData = await response.json();
+          alert(`Error: ${errorData.error || "Unknown error"}`);
         }
-        fetchData(); // Обновляем данные после успешного изменения
+        fetchData();
       })
       .catch((error) => {
-        console.error("Ошибка при обновлении цены:", error);
-        alert("Произошла ошибка при обновлении цены.");
+        console.error("Error updating price:", error);
+        alert("There was an error updating the price.");
       });
   };
 
