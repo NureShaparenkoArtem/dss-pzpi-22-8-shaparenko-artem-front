@@ -11,17 +11,35 @@ const App = () => {
   const [isTabularView, setIsTabularView] = useState(false);
 
   const fetchData = useCallback(() => {
-    fetch(`http://localhost:8080/api/v1/${resource}`)
+    // Учитываем специальный случай для 'sale/details'
+    const endpoint = resource === "sale" ? "sale/details" : resource;
+
+    fetch(`http://localhost:8080/api/v1/${endpoint}`)
       .then((response) => response.json())
-      .then((data) => {
-        const idMapping = {
-          department: "dept_id",
-          good: "good_id",
-          sale: "sale_id",
-          worker: "worker_id",
-        };
-        const idField = idMapping[resource];
-        setData(data.map((item) => ({ ...item, id: item[idField] })));
+      .then((rawData) => {
+        if (resource === "sale") {
+          // Трансформируем данные для отображения
+          const transformedData = rawData.map((item) => ({
+            id: item.sale_id, // DataGrid использует поле `id`
+            sale_id: item.sale_id,
+            check_no: item.check_no,
+            date_sale: new Date(item.date_sale).toLocaleDateString(),
+            price: (item.quantity * item.good.price).toFixed(2),
+            good_name: item.good.name,
+            good_producer: item.good.producer,
+          }));
+          setData(transformedData);
+        } else {
+          // Для остальных ресурсов
+          const idMapping = {
+            department: "dept_id",
+            good: "good_id",
+            sale: "sale_id",
+            worker: "worker_id",
+          };
+          const idField = idMapping[resource];
+          setData(rawData.map((item) => ({ ...item, id: item[idField] })));
+        }
       })
       .catch((error) => console.error("Error fetching data:", error));
   }, [resource]);
@@ -103,8 +121,31 @@ const App = () => {
       });
   };
 
+  // Колонки для DataGrid
   const columns =
-    data.length > 0
+    resource === "sale"
+      ? [
+          { field: "sale_id", headerName: "Sale ID", flex: 1 },
+          { field: "check_no", headerName: "Check No", flex: 1 },
+          { field: "date_sale", headerName: "Date", flex: 1 },
+          { field: "price", headerName: "Price ($)", flex: 1 },
+          { field: "good_name", headerName: "Good Name", flex: 1 },
+          { field: "good_producer", headerName: "Good Producer", flex: 1 },
+          {
+            field: "actions",
+            headerName: "Actions",
+            renderCell: (params) => (
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={() => handleDelete(params.row.id)}
+              >
+                Delete
+              </Button>
+            ),
+          },
+        ]
+      : data.length > 0
       ? [
           ...Object.keys(data[0]).map((key) => ({
             field: key,
@@ -154,7 +195,7 @@ const App = () => {
         </div>
       </div>
       {isTabularView && (
-        <div class="flex flex-col items-center">
+        <div className="flex flex-col items-center">
           <button
             className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mt-4"
             onClick={handleBackToResourceView}
